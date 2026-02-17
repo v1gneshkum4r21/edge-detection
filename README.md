@@ -133,21 +133,23 @@ The app generates a 256-bin histogram of the original image.
 
 ## 🚀 Setup & Running
 
-1. **Backend**:
-   ```bash
-   cd backend
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   python main.py
-   ```
+The easiest way to get started is using the automated setup script:
 
-2. **Frontend**:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+### 🛠️ One-Command Setup (Linux)
+Run this from the project root:
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+This script will:
+1. Verify/Install Python, Node.js, and NPM.
+2. Initialize the backend virtual environment.
+3. Install all dependencies for both Frontend & Backend.
+4. Launch both servers concurrently.
+
+### 🧪 Manual Setup
+If you prefer manual control:
+...
 
 ---
 
