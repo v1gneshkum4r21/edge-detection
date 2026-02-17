@@ -22,12 +22,14 @@ The Sobel operator performs a 2-D spatial gradient measurement on an image. It h
 
 **Mathematical Kernels:**
 
-$$
-G_x = \begin{bmatrix} -1 & 0 & +1 \\ -2 & 0 & +2 \\ -1 & 0 & +1 \end{bmatrix} * I, \quad G_y = \begin{bmatrix} -1 & -2 & -1 \\ 0 & 0 & 0 \\ +1 & +2 & +1 \end{bmatrix} * I
-$$
+```math
+G_x = \begin{bmatrix} -1 & 0 & +1 \\ -2 & 0 & +2 \\ -1 & 0 & +1 \end{bmatrix}, \quad G_y = \begin{bmatrix} -1 & -2 & -1 \\ 0 & 0 & 0 \\ +1 & +2 & +1 \end{bmatrix}
+```
 
 The gradient magnitude is calculated as:
-$$G = \sqrt{G_x^2 + G_y^2}$$
+```math
+G = \sqrt{G_x^2 + G_y^2}
+```
 
 ---
 
@@ -37,15 +39,15 @@ The Laplacian is a 2nd-order derivative operator. Unlike Sobel, it is isotropic 
 **Mathematics:**
 It approximates the Laplacian of an image $L(x,y)$:
 
-$$
+```math
 \nabla^2 f = \frac{\partial^2 f}{\partial x^2} + \frac{\partial^2 f}{\partial y^2}
-$$
+```
 
 Approximation kernel ($3 \times 3$):
 
-$$
+```math
 K = \begin{bmatrix} 0 & 1 & 0 \\ 1 & -4 & 1 \\ 0 & 1 & 0 \end{bmatrix}
-$$
+```
 
 ---
 
@@ -54,9 +56,9 @@ Scharr is an optimization of the Sobel operator. It was designed to provide bett
 
 **Mathematical Kernels:**
 
-$$
+```math
 G_x = \begin{bmatrix} -3 & 0 & +3 \\ -10 & 0 & +10 \\ -3 & 0 & +3 \end{bmatrix}, \quad G_y = \begin{bmatrix} -3 & -10 & -3 \\ 0 & 0 & 0 \\ +3 & +10 & +3 \end{bmatrix}
-$$
+```
 
 ---
 
@@ -65,9 +67,9 @@ Similar to Sobel, the Prewitt operator is used for detecting edges in two direct
 
 **Mathematical Kernels:**
 
-$$
+```math
 G_x = \begin{bmatrix} -1 & 0 & +1 \\ -1 & 0 & +1 \\ -1 & 0 & +1 \end{bmatrix}, \quad G_y = \begin{bmatrix} -1 & -1 & -1 \\ 0 & 0 & 0 \\ +1 & +1 & +1 \end{bmatrix}
-$$
+```
 
 ---
 
@@ -76,9 +78,9 @@ The Roberts Cross operator is one of the earliest and simplest edge detectors. I
 
 **Mathematical Kernels:**
 
-$$
+```math
 G_x = \begin{bmatrix} +1 & 0 \\ 0 & -1 \end{bmatrix}, \quad G_y = \begin{bmatrix} 0 & +1 \\ -1 & 0 \end{bmatrix}
-$$
+```
 
 ---
 
@@ -88,9 +90,9 @@ Unlike derivative-based methods, this uses **Set Theory**.
 **The Process:**
 The gradient is the difference between the **Dilation** and **Erosion** of the image:
 
-$$
+```math
 G(f) = (f \oplus B) - (f \ominus B)
-$$
+```
 
 Where $B$ is the structuring element (Kernel).
 
@@ -101,7 +103,9 @@ Where $B$ is the structuring element (Kernel).
 ### Noise Reduction (Gaussian Blur)
 Before detection, we apply a Gaussian blur to reduce noise.
 **Equation**: 
-$$G(x,y) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$
+```math
+G(x,y) = \frac{1}{2\pi\sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}
+```
 
 ### Intensity Histogram
 The app generates a 256-bin histogram of the original image.
