@@ -42,6 +42,7 @@ $$
 $$
 
 Approximation kernel ($3 \times 3$):
+
 $$
 K = \begin{bmatrix} 0 & 1 & 0 \\ 1 & -4 & 1 \\ 0 & 1 & 0 \end{bmatrix}
 $$
