@@ -4,6 +4,23 @@ EdgeVision Pro is a high-performance, interactive Edge Detection Visualizer. It 
 
 ---
 
+## ✨ Key Features
+- **Multi-Algorithm Support**: Canny, Sobel, Laplacian, Scharr, Prewitt, and Roberts operators.
+- **Real-Time Webcam Mode**: Live edge detection streaming directly from your camera.
+- **Interactive Playground**: Adjust thresholds, kernel sizes, and blur intensity on the fly.
+- **Visual Analytics**: Dynamic intensity histograms for both original and processed images.
+- **Side-by-Side Comparison**: Instant toggle between original and edge-detected views.
+
+---
+
+## 🎥 Real-Time Webcam Mode
+EdgeVision Pro now supports live video processing. 
+- **High Performance**: Optimized frame capture using `requestAnimationFrame` and backend processing throttled to ~15 FPS for stability.
+- **Memory Efficient**: Automatic Blob URL revocation to prevent browser memory leaks during long live sessions.
+- **Isotropic Control**: All manual parameters (thresholds, blur, etc.) apply instantly to the live video stream.
+
+---
+
 ## 🔬 Algorithm Deep Dive
 
 ### 1. Canny Edge Detection
