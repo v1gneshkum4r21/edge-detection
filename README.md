@@ -133,19 +133,25 @@ The app generates a 256-bin histogram of the original image.
 
 ## 🚀 Setup & Running
 
-The easiest way to get started is using the automated setup script:
+The easiest way to get started is using the automated setup scripts.
 
-### 🛠️ One-Command Setup (Linux)
+### 🐧 Ubuntu/Linux Setup
 Run this from the project root:
 ```bash
-chmod +x setup.sh
-./setup.sh
+chmod +x ubuntu-setup.sh
+./ubuntu-setup.sh
 ```
-This script will:
-1. Verify/Install Python, Node.js, and NPM.
-2. Initialize the backend virtual environment.
-3. Install all dependencies for both Frontend & Backend.
-4. Launch both servers concurrently.
+
+### 🪟 Windows Setup
+Double-click `windows-setup.bat` or run it from CMD/PowerShell:
+```cmd
+windows-setup.bat
+```
+
+### ⚙️ What the scripts do:
+1.  **Environment Check**: Verify Python and Node.js installations.
+2.  **Initialization**: Set up Python virtual environments and install dependencies.
+3.  **One-Click Launch**: Start both Backend and Frontend servers automatically.
 
 ### 🧪 Manual Setup
 If you prefer manual control:
