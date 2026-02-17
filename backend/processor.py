@@ -9,6 +9,7 @@ def process_image(image_bytes, algorithm, params):
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     
     if img is None:
+        print("Error: Could not decode image frame")
         return None
 
     # Grayscale conversion
@@ -69,9 +70,6 @@ def process_image(image_bytes, algorithm, params):
     else:
         processed = gray
 
-    # Optional: convert back to color if needed, but edge detection is usually grayscale
-    # If the user wants to see it, we keep it as is.
-    
     if params.get('invert', False):
         processed = 255 - processed
 

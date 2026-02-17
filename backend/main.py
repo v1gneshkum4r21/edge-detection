@@ -60,5 +60,26 @@ async def histogram(image_id: str):
     hist = get_histogram(image_storage[image_id])
     return {"histogram": hist}
 
+@app.post("/process_live")
+async def process_live(file: UploadFile = File(...),
+                       algorithm: str = Form(...),
+                       params: str = Form(...)):
+    print(f"Received frame for {algorithm}")
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    try:
+        params_dict = json.loads(params)
+    except:
+        params_dict = {}
+        
+    file_bytes = await file.read()
+    processed_bytes = process_image(file_bytes, algorithm, params_dict)
+    
+    if processed_bytes is None:
+        raise HTTPException(status_code=500, detail="Processing failed")
+        
+    return Response(content=processed_bytes, media_type="image/png")
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

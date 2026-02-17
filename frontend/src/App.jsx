@@ -13,6 +13,11 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [algorithm, setAlgorithm] = useState('canny');
   const [showOriginal, setShowOriginal] = useState(true);
+  const [mode, setMode] = useState('upload'); // 'upload' or 'webcam'
+  const [webcamActive, setWebcamActive] = useState(false);
+  const videoRef = React.useRef(null);
+  const canvasRef = React.useRef(null);
+  const requestRef = React.useRef(null);
 
   // Parameters
   const [params, setParams] = useState({
@@ -25,6 +30,12 @@ function App() {
     invert: false
   });
   const [histogramData, setHistogramData] = useState(null);
+
+  // Refs for loop state to avoid stale closures
+  const stateRef = React.useRef({ algorithm, params, webcamActive });
+  React.useEffect(() => {
+    stateRef.current = { algorithm, params, webcamActive };
+  }, [algorithm, params, webcamActive]);
 
   const onDrop = useCallback(async (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -65,11 +76,12 @@ function App() {
       const res = await axios.post(`${API_BASE}/process/${id}`, formData, {
         responseType: 'blob'
       });
-      setProcessedImage(URL.createObjectURL(res.data));
 
-      // Also fetch histogram for the original or processed? Let's do original for now
-      // or we can add an endpoint to get histogram of the processed image.
-      // For now, let's just get it for the session image.
+      setProcessedImage(prev => {
+        if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(res.data);
+      });
+
       const histRes = await axios.get(`${API_BASE}/histogram/${id}`);
       setHistogramData(histRes.data.histogram);
     } catch (err) {
@@ -101,12 +113,137 @@ function App() {
     link.click();
   };
 
+  // Webcam Logic
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setWebcamActive(true);
+      }
+    } catch (err) {
+      console.error("Webcam failed", err);
+      alert("Could not access webcam. Please ensure you have given permission and are using HTTPS or localhost.");
+    }
+  };
+
+  const stopWebcam = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = videoRef.current.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setWebcamActive(false);
+    if (requestRef.current) {
+      clearTimeout(requestRef.current);
+      cancelAnimationFrame(requestRef.current);
+    }
+  };
+
+  const processFrame = async () => {
+    if (!stateRef.current.webcamActive || !videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    // Ensure video is playing and has data
+    if (video.paused || video.ended || video.readyState < 2) {
+      requestRef.current = requestAnimationFrame(processFrame);
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    // Match dimensions
+    if (video.videoWidth > 0 && (canvas.width !== video.videoWidth)) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+
+    if (canvas.width === 0) {
+      requestRef.current = requestAnimationFrame(processFrame);
+      return;
+    }
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      if (!blob || !stateRef.current.webcamActive) return;
+
+      const formData = new FormData();
+      formData.append('file', blob, 'frame.jpg');
+      formData.append('algorithm', stateRef.current.algorithm);
+      formData.append('params', JSON.stringify(stateRef.current.params));
+
+      try {
+        const res = await axios.post(`${API_BASE}/process_live`, formData, {
+          responseType: 'blob'
+        });
+
+        if (stateRef.current.webcamActive) {
+          setProcessedImage(prev => {
+            if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(res.data);
+          });
+        }
+      } catch (err) {
+        console.error("Frame processing failed", err);
+      }
+
+      if (stateRef.current.webcamActive) {
+        requestRef.current = setTimeout(() => {
+          requestAnimationFrame(processFrame);
+        }, 100);
+      }
+    }, 'image/jpeg', 0.6);
+  };
+
+  useEffect(() => {
+    if (webcamActive) {
+      processFrame();
+    }
+    return () => {
+      if (requestRef.current) {
+        clearTimeout(requestRef.current);
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, [webcamActive]);
+
+  useEffect(() => {
+    if (mode === 'webcam') {
+      startWebcam();
+    } else {
+      stopWebcam();
+    }
+  }, [mode]);
+
   return (
     <div className="app-container">
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="header">
           <h1>EdgeVision Pro</h1>
+        </div>
+
+        <div className="control-group">
+          <label className="control-label">Mode</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              className={`btn ${mode === 'upload' ? 'btn-primary' : 'btn-outline'}`}
+              style={{ flex: 1, padding: '0.5rem' }}
+              onClick={() => setMode('upload')}
+            >
+              Upload
+            </button>
+            <button
+              className={`btn ${mode === 'webcam' ? 'btn-primary' : 'btn-outline'}`}
+              style={{ flex: 1, padding: '0.5rem' }}
+              onClick={() => setMode('webcam')}
+            >
+              Webcam
+            </button>
+          </div>
         </div>
 
         <div className="control-group">
@@ -232,6 +369,7 @@ function App() {
             setOriginalImage(null);
             setProcessedImage(null);
             setImageId(null);
+            setHistogramData(null);
           }}>
             <RotateCcw size={16} /> Reset
           </button>
@@ -239,8 +377,8 @@ function App() {
       </aside >
 
       {/* Main Workspace */}
-      < main className="main-content" >
-        {!originalImage ? (
+      <main className="main-content">
+        {mode === 'upload' && !originalImage ? (
           <div style={{ padding: '4rem', maxWidth: '600px', margin: 'auto', width: '100%' }}>
             <div {...getRootProps()} className="dropzone">
               <input {...getInputProps()} />
@@ -258,15 +396,31 @@ function App() {
                 <div className="image-card fade-in">
                   <div className="card-header">
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <ImageIcon size={16} /> Original
+                      <ImageIcon size={16} /> {mode === 'webcam' ? 'Live Camera' : 'Original'}
                     </span>
                   </div>
                   <div className="image-preview">
-                    <img
-                      src={originalImage}
-                      alt="Original"
-                      style={{ filter: params.grayscale ? 'grayscale(100%)' : 'none' }}
-                    />
+                    {mode === 'webcam' ? (
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          filter: params.grayscale ? 'grayscale(100%)' : 'none',
+                          display: showOriginal ? 'block' : 'none'
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={originalImage}
+                        alt="Original"
+                        style={{ filter: params.grayscale ? 'grayscale(100%)' : 'none' }}
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -282,11 +436,13 @@ function App() {
                   {processedImage ? (
                     <img src={processedImage} alt="Processed" />
                   ) : (
-                    <div style={{ color: 'var(--text-muted)' }}>Processing...</div>
+                    <div style={{ color: 'var(--text-muted)' }}>{mode === 'webcam' ? 'Initializing camera...' : 'Processing...'}</div>
                   )}
                 </div>
               </div>
             </div>
+
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
 
             <div className="download-bar">
               <button
@@ -306,16 +462,25 @@ function App() {
                 <Download size={18} /> Download Result
               </button>
             </div>
+
+            {!showOriginal && mode === 'webcam' && (
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+              />
+            )}
           </>
-        )
-        }
-      </main >
+        )}
+      </main>
 
       <style>{`
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
-    </div >
+    </div>
   );
 }
 
